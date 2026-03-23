@@ -12,7 +12,7 @@ type Review struct {
 type ReviewCreateRequest struct {
 	UserID     uint   `json:"user_id" binding:"required"`
 	MedicineID uint   `json:"medicine_id" binding:"required"`
-	Rating     uint   `json:"rating" binding:"required"`
+	Rating     uint   `json:"rating" binding:"required,gte=1,lte=5"`
 	Text       string `json:"text" binding:"required"`
 }
 type ReviewUpdateRequest struct {
