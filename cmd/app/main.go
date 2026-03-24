@@ -21,19 +21,22 @@ func main() {
 		&models.Review{},
 		&models.SubCategory{},
 		&models.User{},
+		&models.Medicine{},
 	); err != nil {
 		log.Fatalf("не удалось выполнить миграции: %v", err)
 	}
 
 	categoryRepo := repository.NewCategoryRepository(db)
 	subCategoryRepo := repository.NewSubCategoryRepository(db)
+	medicineRepo := repository.NewMedicineRepository(db)
 
 	categoryService := services.NewCategoryService(categoryRepo)
 	subCategoryService := services.NewSubCategoryService(subCategoryRepo, categoryRepo)
+	medicineService := services.NewMedicineService(medicineRepo, categoryRepo, subCategoryRepo)
 
 	router := gin.Default()
 
-	transport.RegisterRoutes(router, categoryService, subCategoryService)
+	transport.RegisterRoutes(router, categoryService, subCategoryService, medicineService)
 
 	if err := router.Run(); err != nil {
 		log.Fatalf("не удалось запустить HTTP-сервер: %v", err)
