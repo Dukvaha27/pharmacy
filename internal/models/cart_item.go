@@ -30,15 +30,14 @@ type CartItem struct {
 	CartID       uint `json:"cart_id"`
 }
 
-
 type CartItemCreateRequest struct {
-	MedicineID   int  `json:"medicine_id" binding:"required"`
-	Quantity     int  `json:"quantity" binding:"required"`
+	MedicineID int `json:"medicine_id" binding:"required"`
+	Quantity   int `json:"quantity" binding:"required"`
 }
 
 type CartItemUpdateRequest struct {
-	MedicineID   *int  `json:"medicine_id"`
-	Quantity     *int  `json:"quantity"`
+	MedicineID *int `json:"medicine_id"`
+	Quantity   *int `json:"quantity"`
 }
 
 // ---------
