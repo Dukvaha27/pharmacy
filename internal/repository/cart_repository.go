@@ -29,7 +29,7 @@ func NewCartRepository(db *gorm.DB) CartRepository {
 func (r gormCartRepository) UpdateCartTotalPrice(userID uint, summa int) error {
 	cart, err := r.GetByUserID(uint64(userID))
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return r.db.Model(cart).Update("total_price", cart.TotalPrice + summa).Error

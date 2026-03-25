@@ -9,14 +9,13 @@ import (
 )
 
 type CartService struct {
-	cartRepo       repository.CartRepository
-	userRepository repository.UserRepository
+	cartRepo repository.CartRepository
+	userRepo repository.UserRepository
 }
 
-func NewCartService(cartRepository repository.CartRepository) CartService {
-	return CartService{cartRepo: cartRepository}
+func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository) CartService {
+	return CartService{cartRepo: cartRepo, userRepo: userRepo}
 }
-
 
 func (s *CartService) ClearCart(userID uint64) error {
 	return s.cartRepo.ClearCart(userID)
@@ -29,22 +28,24 @@ func (s *CartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpd
 	}
 	var cartItem models.CartItem
 	var sum int
-	var HasItemId bool
+	var hasItemId bool
 	for _, v := range cart.CartItems {
 		if v.ID == uint(itemID) {
-			HasItemId = true
+			hasItemId = true
 			cartItem = v
 			if item.Quantity != nil {
 				sum = (*item.Quantity + cartItem.PricePerUnit) - cartItem.LineTotal
+				sum = cartItem.PricePerUnit * cartItem.Quantity
+				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err !=nil {
+					return err
+				}
 				cartItem.Quantity = *item.Quantity
 			}
 
-			sum = cartItem.PricePerUnit * cartItem.Quantity
-			s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum)
 			break
 		}
 	}
-	if HasItemId == false {
+	if !hasItemId {
 		return errors.New("Not Found Item ID")
 	}
 	return s.cartRepo.UpdateItem(&cartItem)
@@ -68,25 +69,27 @@ func (s *CartService) DeleteItem(userID, itemID uint) error {
 		}
 	}
 
-	s.cartRepo.UpdateCartTotalPrice(userID, -(number))
+	if err := s.cartRepo.UpdateCartTotalPrice(userID, -(number)); err!=nil {
+		return err
+	}
 
 	return s.cartRepo.DeleteItem(uint64(cart.ID), uint64(itemID))
 }
 
 func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error {
 
-	
-
-	_, errUser := s.userRepository.GetByID(uint64(userID))
-	if errUser != nil {
-		if errors.Is(errUser, gorm.ErrRecordNotFound) {
+	_, err := s.userRepo.GetByID(uint64(userID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("User Not Found")
+		} else {
+			return err
 		}
 	}
 
-	cart, errCart := s.cartRepo.GetByUserID(uint64(userID))
-	if errCart != nil {
-		if errors.Is(errCart, gorm.ErrRecordNotFound) {
+	cart, err := s.cartRepo.GetByUserID(uint64(userID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			cart = &models.Cart{
 				UserID: userID,
 			}
@@ -95,7 +98,7 @@ func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequ
 				return err
 			}
 		} else {
-			return errCart
+			return err
 		}
 	}
 	cartItem := &models.CartItem{
@@ -106,7 +109,9 @@ func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequ
 		CartID:       cart.ID,
 	}
 
-	s.cartRepo.UpdateCartTotalPrice(userID, cartItem.LineTotal)
+	if err := s.cartRepo.UpdateCartTotalPrice(userID, cartItem.LineTotal); err !=nil {
+		return err
+	}
 
 	return s.cartRepo.AddItem(userID, cartItem, cart)
 }
