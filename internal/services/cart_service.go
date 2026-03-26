@@ -62,14 +62,19 @@ func (s *CartService) DeleteItem(userID, itemID uint) error {
 
 	}
 
-	var number int
+	var lineTotal int
+	var hasItemID bool
 	for _, v := range cart.CartItems {
 		if v.ID == itemID {
-			number = v.LineTotal
+			lineTotal = v.LineTotal
+			hasItemID = true
 		}
 	}
+	if !hasItemID {
+		return errors.New("ItemId not Found")
+	}
 
-	if err := s.cartRepo.UpdateCartTotalPrice(userID, -(number)); err != nil {
+	if err := s.cartRepo.UpdateCartTotalPrice(userID, -(lineTotal)); err != nil {
 		return err
 	}
 

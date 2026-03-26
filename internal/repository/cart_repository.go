@@ -17,7 +17,6 @@ type CartRepository interface {
 	ClearCart(userID uint64) error
 }
 
-
 type gormCartRepository struct {
 	db *gorm.DB
 }
@@ -32,7 +31,7 @@ func (r gormCartRepository) UpdateCartTotalPrice(userID uint, summa int) error {
 		return err
 	}
 
-	return r.db.Model(cart).Update("total_price", cart.TotalPrice + summa).Error
+	return r.db.Model(cart).Update("total_price", cart.TotalPrice+summa).Error
 }
 
 func (r gormCartRepository) ClearCart(userID uint64) error {
@@ -68,9 +67,11 @@ func (r gormCartRepository) GetByUserID(userID uint64) (*models.Cart, error) {
 func (r gormCartRepository) AddItem(userID uint, cartItem *models.CartItem, cart *models.Cart) error {
 
 	item := models.CartItem{
-		MedicineID: cartItem.MedicineID,
-		Quantity:   cartItem.Quantity,
-		CartID:     cart.ID,
+		MedicineID:   cartItem.MedicineID,
+		Quantity:     cartItem.Quantity,
+		CartID:       cart.ID,
+		LineTotal:    cartItem.LineTotal,
+		PricePerUnit: cartItem.PricePerUnit,
 	}
 
 	return r.db.Model(&cart).Association("CartItems").Append(&item)

@@ -15,8 +15,8 @@ func main() {
 	db := config.SetUpDatabaseConnection()
 
 	if err := db.AutoMigrate(
-		&models.CartItem{},
 		&models.Cart{},
+		&models.CartItem{},
 		&models.Category{},
 		&models.Review{},
 		&models.SubCategory{},
