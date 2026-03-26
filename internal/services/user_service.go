@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"net/mail"
 	"pharmacy/internal/models"
 	"pharmacy/internal/repository"
 )
@@ -40,14 +39,8 @@ func (s *UserService) Update(userID uint64, user *models.UserUpdateRequest) erro
 }
 
 func (s *UserService) Create(user *models.UserCreateRequest) error {
-	_, err := mail.ParseAddress(user.Email)
-	if err != nil {
-		return errors.New("Не корректный email!")
-	}
-	if len(user.DefaultAddress) < 5 {
-		return errors.New("Слишком короткий адресс!")
-	}
-	if user.Phone != 11 {
+
+	if len(user.Phone) != 11 {
 		return errors.New("Номер телефона должен содержать 11 цифр!")
 	}
 
