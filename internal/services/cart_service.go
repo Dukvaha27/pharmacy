@@ -28,24 +28,24 @@ func (s *CartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpd
 	}
 	var cartItem models.CartItem
 	var sum int
-	var hasItemId bool
+	var hasItemID bool
 	for _, v := range cart.CartItems {
 		if v.ID == uint(itemID) {
-			hasItemId = true
+			hasItemID = true
 			cartItem = v
 			if item.Quantity != nil {
-				sum = (*item.Quantity + cartItem.PricePerUnit) - cartItem.LineTotal
-				sum = cartItem.PricePerUnit * cartItem.Quantity
-				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err !=nil {
+				sum = (*item.Quantity * cartItem.PricePerUnit) - cartItem.LineTotal
+				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err != nil {
 					return err
 				}
 				cartItem.Quantity = *item.Quantity
+				cartItem.LineTotal = *item.Quantity * cartItem.PricePerUnit
 			}
 
 			break
 		}
 	}
-	if !hasItemId {
+	if !hasItemID {
 		return errors.New("Not Found Item ID")
 	}
 	return s.cartRepo.UpdateItem(&cartItem)
@@ -69,7 +69,7 @@ func (s *CartService) DeleteItem(userID, itemID uint) error {
 		}
 	}
 
-	if err := s.cartRepo.UpdateCartTotalPrice(userID, -(number)); err!=nil {
+	if err := s.cartRepo.UpdateCartTotalPrice(userID, -(number)); err != nil {
 		return err
 	}
 
@@ -109,7 +109,7 @@ func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequ
 		CartID:       cart.ID,
 	}
 
-	if err := s.cartRepo.UpdateCartTotalPrice(userID, cartItem.LineTotal); err !=nil {
+	if err := s.cartRepo.UpdateCartTotalPrice(userID, cartItem.LineTotal); err != nil {
 		return err
 	}
 
