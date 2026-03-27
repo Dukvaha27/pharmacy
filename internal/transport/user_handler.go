@@ -20,9 +20,9 @@ func NewUserHandler(userService services.UserService) UserHandler {
 func (h *UserHandler) RegisterRoutes(r *gin.Engine) {
 	users := r.Group("/users")
 	{
-		users.POST("")
-		users.PATCH("id")
-		users.GET("/:id")
+		users.POST("", h.Create)
+		users.PATCH("/:id", h.Update)
+		users.GET("/:id", h.GetByID)
 	}
 }
 
@@ -60,9 +60,9 @@ func (h *UserHandler) Update(c *gin.Context) {
 		})
 		return
 	}
-	if err :=h.service.Update(uint64(id),&req); err!=nil {
+	if err := h.service.Update(uint64(id), &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Updating user error",
+			"error":   "Updating user error",
 			"details": err.Error(),
 		})
 		return
@@ -70,7 +70,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User updated succesfully",
-		"data": req,
+		"data":    req,
 	})
 
 }

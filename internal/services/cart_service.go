@@ -11,11 +11,11 @@ import (
 type CartService struct {
 	cartRepo repository.CartRepository
 	userRepo repository.UserRepository
-	medicineService repository.MedicineRepository
+	medicineRepo repository.MedicineRepository
 }
 
-func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository) CartService {
-	return CartService{cartRepo: cartRepo, userRepo: userRepo}
+func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository, medmedicineRepo repository.MedicineRepository) CartService {
+	return CartService{cartRepo: cartRepo, userRepo: userRepo, medicineRepo: medmedicineRepo}
 }
 
 func (s *CartService) ClearCart(userID uint64) error {
@@ -99,7 +99,7 @@ func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequ
 		}
 	}
 
-	medicine,err :=s.medicineService.FindByID(uint(cartItemReq.MedicineID))
+	medicine,err :=s.medicineRepo.FindByID(uint(cartItemReq.MedicineID))
 	if err!=nil {
 		return errors.New("Medicine not found")
 	}

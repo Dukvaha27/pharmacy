@@ -20,10 +20,10 @@ func NewCartHandler(cartService services.CartService) CartHandler {
 func (h *CartHandler) RegisterRoutes(r *gin.Engine) {
 	usersCart := r.Group("/users/:id/cart")
 	{
-		usersCart.GET("")
-		usersCart.POST("/items")
-		usersCart.PATCH("/items/:item_id")
-		usersCart.DELETE("/items/:item_id")
+		usersCart.GET("", h.GetByUserID)
+		usersCart.POST("/items", h.AddItem)
+		usersCart.PATCH("/items/:item_id", h.UpdateItem)
+		usersCart.DELETE("/items/:item_id", h.Delete)
 	}
 }
 
@@ -104,7 +104,7 @@ func (h *CartHandler) GetByUserID(c *gin.Context) {
 	cart, err := h.service.GetByUserID(uint64(userID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Ошибка при взятии корзиныы пользователя.",
+			"error":   "Ошибка при взятии корзины пользователя.",
 			"details": err.Error(),
 		})
 		return
