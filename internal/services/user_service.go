@@ -24,7 +24,7 @@ func (s *UserService) Update(userID uint64, user *models.UserUpdateRequest) erro
 		return err
 	}
 	if user.DefaultAddress != nil {
-		oldUser.DefaultAddress = *user.DefaultAddress
+		oldUser.DefaultAddress = user.DefaultAddress
 	}
 	if user.Email != nil {
 		oldUser.Email = *user.Email
@@ -48,10 +48,8 @@ func (s *UserService) Create(user *models.UserCreateRequest) error {
 		FullName:       user.FullName,
 		Email:          user.Email,
 		Phone:          user.Phone,
-		DefaultAddress: user.DefaultAddress,
+		DefaultAddress: &user.DefaultAddress,
 	}
 
 	return s.userRepo.Create(&userModel)
 }
-
-
