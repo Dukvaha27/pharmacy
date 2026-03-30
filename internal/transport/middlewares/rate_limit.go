@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -9,17 +10,17 @@ import (
 )
 
 type RateLimit struct {
-	limiters map[string]*rate.Limiter
-	mu       sync.RWMutex
-	r        rate.Limit
-	b        int
+	limiters      map[string]*rate.Limiter
+	mu            sync.RWMutex
+	ratePerSecond rate.Limit
+	burstSize     int
 }
 
-func NewRateLimiter(r rate.Limit, b int) *RateLimit {
+func NewRateLimiter(ratePerSecond rate.Limit, burstSize int) *RateLimit {
 	return &RateLimit{
-		r:        r,
-		b:        b,
-		limiters: make(map[string]*rate.Limiter),
+		ratePerSecond: ratePerSecond,
+		burstSize:     burstSize,
+		limiters:      make(map[string]*rate.Limiter),
 	}
 }
 
@@ -33,7 +34,7 @@ func (rl *RateLimit) getLimiter(key string) *rate.Limiter {
 		limiter, exists = rl.limiters[key]
 
 		if !exists {
-			limiter = rate.NewLimiter(rl.r, rl.b)
+			limiter = rate.NewLimiter(rl.ratePerSecond, rl.burstSize)
 			rl.limiters[key] = limiter
 		}
 		rl.mu.Unlock()
@@ -45,18 +46,36 @@ func (rl *RateLimit) getLimiter(key string) *rate.Limiter {
 func (rl *RateLimit) RateLimitMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ip := ctx.ClientIP()
-
 		limiter := rl.getLimiter(ip)
 
-		if !limiter.Allow() {
-
-			ctx.JSON(http.StatusTooManyRequests, gin.H{
-				"error":       "Много запросов",
-				"retry_after": "1 minute",
+		reservation := limiter.Reserve()
+		if !reservation.OK() {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Rate limiter unavailable",
 			})
-
 			ctx.Abort()
 			return
 		}
+
+		delay := reservation.Delay()
+		if delay > 0 {
+			reservation.Cancel()
+
+			retryAfter := delay.Seconds()
+			ctx.Header("Retry-After", fmt.Sprintf("%.0f", retryAfter))
+
+			ctx.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "too_many_requests",
+				"message":     "Превышен лимит запросов",
+				"retry_after": retryAfter,
+				"limit":       rl.burstSize,
+			})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Header("X-RateLimit-Limit", fmt.Sprintf("%d", rl.burstSize))
+
+		ctx.Next()
 	}
 }

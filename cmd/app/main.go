@@ -37,7 +37,7 @@ func main() {
 
 	router := gin.Default()
 
-	limiter := middlewares.NewRateLimiter(10, 20)
+	limiter := middlewares.NewRateLimiter(config.RateLimitRPS, config.RateLimitBurst)
 	router.Use(limiter.RateLimitMiddleware())
 
 	transport.RegisterRoutes(router, categoryService, subCategoryService, medicineService)
