@@ -9,11 +9,11 @@ import (
 )
 
 type CartService interface {
-	ClearCart(userID uint64) error 
-	GetByUserID(userID uint64) (*models.Cart, error) 
-	 UpdateItem(userID, itemID uint64, item *models.CartItemUpdateRequest) error
-	 DeleteItem(userID, itemID uint) error 
-	 AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error 
+	ClearCart(userID uint64) error
+	GetByUserID(userID uint64) (*models.Cart, error)
+	UpdateItem(userID, itemID uint64, item *models.CartItemUpdateRequest) error
+	DeleteItem(userID, itemID uint) error
+	AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error
 }
 
 type cartService struct {
@@ -22,10 +22,8 @@ type cartService struct {
 	medicineRepo repository.MedicineRepository
 }
 
-
-
-func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository, medicineRepo repository.MedicineRepository) cartService {
-	return cartService{cartRepo: cartRepo, userRepo: userRepo, medicineRepo: medicineRepo}
+func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository, medicineRepo repository.MedicineRepository) CartService {
+	return &cartService{cartRepo: cartRepo, userRepo: userRepo, medicineRepo: medicineRepo}
 }
 
 func (s *cartService) ClearCart(userID uint64) error {
@@ -51,7 +49,7 @@ func (s *cartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpd
 			cartItem = v
 			if item.Quantity != nil {
 				sum = (*item.Quantity * cartItem.PricePerUnit) - cartItem.LineTotal
-				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err != nil { //    
+				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err != nil { //
 					return err
 				}
 				cartItem.Quantity = *item.Quantity

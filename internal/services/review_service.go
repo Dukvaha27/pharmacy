@@ -10,7 +10,7 @@ import (
 
 type ReviewService interface {
 	Delete(reviewID uint64) error
-	 Update(reviewID uint64, req models.ReviewUpdateRequest) error
+	Update(reviewID uint64, req models.ReviewUpdateRequest) error
 	Create(req models.ReviewCreateRequest) error
 	GetAll(medicineID uint64) (*[]models.Review, error)
 	GetByID(reviewID uint64) (*models.Review, error)
@@ -25,20 +25,12 @@ func NewReviewService(reviewRepo repository.ReviewRepository, medicineRepo repos
 	return reviewService{reviewRepo: reviewRepo, medicineRepo: medicineRepo}
 }
 
-// func (s *reviewService)
 func (s *reviewService) GetAll(medicineID uint64) (*[]models.Review, error) {
 	if medicineID == 0 {
 		return nil, errors.New("Invalid medicine ID")
 	}
 
 	reviews, err := s.reviewRepo.GetAll(medicineID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("reviews not found")
-		} else {
-			return nil, err
-		}
-	}
 	return &reviews, err
 }
 
@@ -55,7 +47,7 @@ func (s *reviewService) GetByID(reviewID uint64) (*models.Review, error) {
 			return nil, err
 		}
 	}
-	return &review, err
+	return &review, nil
 }
 
 func (s *reviewService) Delete(reviewID uint64) error {
@@ -71,7 +63,7 @@ func (s *reviewService) Delete(reviewID uint64) error {
 		}
 	}
 
-	return err
+	return nil
 }
 func (s *reviewService) Update(reviewID uint64, req models.ReviewUpdateRequest) error {
 	review, err := s.reviewRepo.GetByID(reviewID)
