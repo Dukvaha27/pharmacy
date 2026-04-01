@@ -7,6 +7,7 @@ import (
 	"pharmacy/internal/repository"
 	"pharmacy/internal/services"
 	"pharmacy/internal/transport"
+	"pharmacy/internal/transport/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +36,9 @@ func main() {
 	medicineService := services.NewMedicineService(medicineRepo, categoryRepo, subCategoryRepo)
 
 	router := gin.Default()
+
+	limiter := middlewares.NewRateLimiter(config.RateLimitRPS, config.RateLimitBurst)
+	router.Use(limiter.RateLimitMiddleware())
 
 	transport.RegisterRoutes(router, categoryService, subCategoryService, medicineService)
 

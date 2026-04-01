@@ -7,7 +7,7 @@ type User struct {
 	FullName       string `json:"full_name" gorm:"not null"`
 	Email          string `json:"email" gorm:"not null"`
 	Phone          string `json:"phone" gorm:"not null"`
-	DefaultAddress string `json:"default_address"`
+	DefaultAddress *string `json:"default_address"`
 }
 
 type UserCreateRequest struct {
