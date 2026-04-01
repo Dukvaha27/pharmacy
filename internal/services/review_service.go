@@ -31,7 +31,10 @@ func (s *reviewService) GetAll(medicineID uint64) (*[]models.Review, error) {
 	}
 
 	reviews, err := s.reviewRepo.GetAll(medicineID)
-	return &reviews, err
+	if err != nil {
+		return nil, err
+	}
+	return &reviews, nil
 }
 
 func (s *reviewService) GetByID(reviewID uint64) (*models.Review, error) {
