@@ -10,7 +10,7 @@ import (
 
 type ReviewService interface {
 	Delete(reviewID uint64) error
-	Update(req models.ReviewUpdateRequest) error
+	 Update(reviewID uint64, req models.ReviewUpdateRequest) error
 	Create(req models.ReviewCreateRequest) error
 	GetAll(medicineID uint64) (*[]models.Review, error)
 	GetByID(reviewID uint64) (*models.Review, error)
@@ -62,7 +62,7 @@ func (s *reviewService) Delete(reviewID uint64) error {
 	if reviewID == 0 {
 		return errors.New("Invalid review ID")
 	}
-	err := s.Delete(reviewID)
+	err := s.reviewRepo.Delete(reviewID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("Review not found")

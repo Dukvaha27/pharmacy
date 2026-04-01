@@ -27,7 +27,7 @@ func (r gormReviewRepository) Delete(reviewID uint64) error {
 }
 
 func (r gormReviewRepository) Update(review models.Review) error {
-	return r.db.Where("medicine_id = ? AND id= ?", review.ID).Updates(&review).Error
+	return r.db.Model(&review).Where("id = ?", review.ID).Updates(review).Error
 }
 
 func (r gormReviewRepository) Create(review models.Review) error {
@@ -43,5 +43,5 @@ func (r gormReviewRepository) GetAll(medicineID uint64) ([]models.Review, error)
 func (r gormReviewRepository) GetByID(reviewID uint64) (models.Review, error) {
 	var review models.Review
 	err := r.db.First(&review, reviewID).Error
-	return review,err
+	return review, err
 }

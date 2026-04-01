@@ -49,7 +49,7 @@ func (r gormCartRepository) DeleteItem(cartID, itemID uint64) error {
 }
 
 func (r gormCartRepository) UpdateItem(item *models.CartItem) error {
-	return r.db.Model(&models.CartItem{}).Where("cart_id = ?", item.CartID).Select("*").Updates(item).Error
+	return r.db.Model(&item).Where("cart_id = ?", item.CartID).Updates(item).Error
 }
 
 func (r gormCartRepository) Create(cart *models.Cart) error {
