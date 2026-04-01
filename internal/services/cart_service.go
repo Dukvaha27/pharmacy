@@ -8,26 +8,36 @@ import (
 	"gorm.io/gorm"
 )
 
-type CartService struct {
-	cartRepo repository.CartRepository
-	userRepo repository.UserRepository
+type CartService interface {
+	ClearCart(userID uint64) error 
+	GetByUserID(userID uint64) (*models.Cart, error) 
+	 UpdateItem(userID, itemID uint64, item *models.CartItemUpdateRequest) error
+	 DeleteItem(userID, itemID uint) error 
+	 AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error 
+}
+
+type cartService struct {
+	cartRepo     repository.CartRepository
+	userRepo     repository.UserRepository
 	medicineRepo repository.MedicineRepository
 }
 
-func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository, medmedicineRepo repository.MedicineRepository) CartService {
-	return CartService{cartRepo: cartRepo, userRepo: userRepo, medicineRepo: medmedicineRepo}
+
+
+func NewCartService(cartRepo repository.CartRepository, userRepo repository.UserRepository, medicineRepo repository.MedicineRepository) cartService {
+	return cartService{cartRepo: cartRepo, userRepo: userRepo, medicineRepo: medicineRepo}
 }
 
-func (s *CartService) ClearCart(userID uint64) error {
+func (s *cartService) ClearCart(userID uint64) error {
 	return s.cartRepo.ClearCart(userID)
 }
 
-func (s *CartService) GetByUserID(userID uint64) (*models.Cart,error)  {
+func (s *cartService) GetByUserID(userID uint64) (*models.Cart, error) {
 	cart, err := s.cartRepo.GetByUserID(userID)
 	return cart, err
 }
 
-func (s *CartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpdateRequest) error {
+func (s *cartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpdateRequest) error {
 	cart, err := s.cartRepo.GetByUserID(userID)
 	if err != nil {
 		return err
@@ -41,7 +51,7 @@ func (s *CartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpd
 			cartItem = v
 			if item.Quantity != nil {
 				sum = (*item.Quantity * cartItem.PricePerUnit) - cartItem.LineTotal
-				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err != nil {
+				if err := s.cartRepo.UpdateCartTotalPrice(cart.UserID, sum); err != nil { //    
 					return err
 				}
 				cartItem.Quantity = *item.Quantity
@@ -57,7 +67,7 @@ func (s *CartService) UpdateItem(userID, itemID uint64, item *models.CartItemUpd
 	return s.cartRepo.UpdateItem(&cartItem)
 }
 
-func (s *CartService) DeleteItem(userID, itemID uint) error {
+func (s *cartService) DeleteItem(userID, itemID uint) error {
 	cart, err := s.cartRepo.GetByUserID(uint64(userID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -88,7 +98,7 @@ func (s *CartService) DeleteItem(userID, itemID uint) error {
 	return s.cartRepo.DeleteItem(uint64(cart.ID), uint64(itemID))
 }
 
-func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error {
+func (s *cartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequest) error {
 
 	_, err := s.userRepo.GetByID(uint64(userID))
 	if err != nil {
@@ -99,12 +109,10 @@ func (s *CartService) AddItem(userID uint, cartItemReq models.CartItemCreateRequ
 		}
 	}
 
-	medicine,err :=s.medicineRepo.FindByID(uint(cartItemReq.MedicineID))
-	if err!=nil {
+	medicine, err := s.medicineRepo.FindByID(uint(cartItemReq.MedicineID))
+	if err != nil {
 		return errors.New("Medicine not found")
 	}
-
-	
 
 	cart, err := s.cartRepo.GetByUserID(uint64(userID))
 	if err != nil {

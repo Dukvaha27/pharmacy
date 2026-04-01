@@ -37,7 +37,7 @@ type CartItemCreateRequest struct {
 }
 
 type CartItemUpdateRequest struct {
-	Quantity   *int `json:"quantity"`
+	Quantity *int `json:"quantity"`
 }
 
 // ---------
