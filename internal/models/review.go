@@ -7,7 +7,7 @@ type Review struct {
 	UserID     uint `json:"user_id" gorm:"not null,index"`
 	MedicineID uint `json:"medicine_id" gorm:"not null,index"`
 	Medicine   Medicine
-	Rating     uint   `json:"rating" binding:"required,gte=1,lte=5"`
+	Rating     uint   `json:"rating" `
 	Text       string `json:"text" gorm:"not null"`
 }
 
@@ -19,6 +19,6 @@ type ReviewCreateRequest struct {
 }
 
 type ReviewUpdateRequest struct {
-	Rating     *uint   `json:"rating"`
-	Text       *string `json:"text"`
+	Rating *uint   `json:"rating" binding:"omitempty,gte=1,lte=5"`
+	Text   *string `json:"text"`
 }

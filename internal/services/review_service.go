@@ -21,8 +21,8 @@ type reviewService struct {
 	medicineRepo repository.MedicineRepository
 }
 
-func NewReviewService(reviewRepo repository.ReviewRepository, medicineRepo repository.MedicineRepository) reviewService {
-	return reviewService{reviewRepo: reviewRepo, medicineRepo: medicineRepo}
+func NewReviewService(reviewRepo repository.ReviewRepository, medicineRepo repository.MedicineRepository) ReviewService {
+	return &reviewService{reviewRepo: reviewRepo, medicineRepo: medicineRepo}
 }
 
 func (s *reviewService) GetAll(medicineID uint64) (*[]models.Review, error) {
@@ -54,16 +54,22 @@ func (s *reviewService) GetByID(reviewID uint64) (*models.Review, error) {
 }
 
 func (s *reviewService) Delete(reviewID uint64) error {
-	if reviewID == 0 {
-		return errors.New("Invalid review ID")
+	if _, err := s.reviewRepo.GetByID(reviewID); err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("Review not found")
+		}
+		return err
+
 	}
+
 	err := s.reviewRepo.Delete(reviewID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("Review not found")
-		} else {
-			return err
 		}
+		return err
+
 	}
 
 	return nil
@@ -71,7 +77,11 @@ func (s *reviewService) Delete(reviewID uint64) error {
 func (s *reviewService) Update(reviewID uint64, req models.ReviewUpdateRequest) error {
 	review, err := s.reviewRepo.GetByID(reviewID)
 	if err != nil {
-		return errors.New("Review not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("Review not found")
+		}
+		return err
+
 	}
 	if req.Rating != nil {
 		review.Rating = *req.Rating
@@ -85,23 +95,20 @@ func (s *reviewService) Update(reviewID uint64, req models.ReviewUpdateRequest) 
 }
 
 func (s *reviewService) Create(req models.ReviewCreateRequest) error {
-	medicine, err := s.medicineRepo.FindByID(req.MedicineID)
+	_, err := s.medicineRepo.FindByID(req.MedicineID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("Medicine Not Found")
-		} else {
-			return err
 		}
+		return err
 	}
 
 	review := models.Review{
 		UserID:     req.UserID,
 		MedicineID: req.MedicineID,
-		Medicine:   *medicine,
 		Rating:     req.Rating,
 		Text:       req.Text,
 	}
 
 	return s.reviewRepo.Create(review)
-
 }
