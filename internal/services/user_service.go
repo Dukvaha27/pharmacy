@@ -6,7 +6,13 @@ import (
 	"pharmacy/internal/repository"
 )
 
-type UserService struct {
+type UserService interface {
+	GetByID(userID uint64) (*models.User, error)
+	Update(userID uint64, user *models.UserUpdateRequest) error
+	Create(user *models.UserCreateRequest) error
+}
+
+type userService struct {
 	userRepo repository.UserRepository
 }
 
@@ -14,11 +20,15 @@ type UserService struct {
 // GetByID(userID uint64) (*models.User,error)
 // Update(user *models.User) error
 
-func (s *UserService) GetByID(userID uint64) (*models.User, error) {
+func NewUserService(userRepo repository.UserRepository) UserService {
+	return &userService{userRepo: userRepo}
+}
+
+func (s *userService) GetByID(userID uint64) (*models.User, error) {
 	return s.userRepo.GetByID(userID)
 }
 
-func (s *UserService) Update(userID uint64, user *models.UserUpdateRequest) error {
+func (s *userService) Update(userID uint64, user *models.UserUpdateRequest) error {
 	oldUser, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return err
@@ -38,7 +48,7 @@ func (s *UserService) Update(userID uint64, user *models.UserUpdateRequest) erro
 	return s.userRepo.Update(oldUser)
 }
 
-func (s *UserService) Create(user *models.UserCreateRequest) error {
+func (s *userService) Create(user *models.UserCreateRequest) error {
 
 	if len(user.Phone) != 11 {
 		return errors.New("Номер телефона должен содержать 11 цифр!")

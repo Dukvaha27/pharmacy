@@ -49,7 +49,7 @@ func (r gormCartRepository) DeleteItem(cartID, itemID uint64) error {
 }
 
 func (r gormCartRepository) UpdateItem(item *models.CartItem) error {
-	return r.db.Model(&models.CartItem{}).Where("cart_id = ?", item.CartID).Select("*").Updates(item).Error
+	return r.db.Model(&item).Where("cart_id = ?", item.CartID).Updates(item).Error
 }
 
 func (r gormCartRepository) Create(cart *models.Cart) error {
@@ -58,7 +58,7 @@ func (r gormCartRepository) Create(cart *models.Cart) error {
 
 func (r gormCartRepository) GetByUserID(userID uint64) (*models.Cart, error) {
 	var cart models.Cart
-	if err := r.db.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+	if err := r.db.Where("user_id = ?", userID).Preload("CartItems").First(&cart).Error; err != nil {
 		return nil, err
 	}
 	return &cart, nil

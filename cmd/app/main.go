@@ -30,17 +30,23 @@ func main() {
 	categoryRepo := repository.NewCategoryRepository(db)
 	subCategoryRepo := repository.NewSubCategoryRepository(db)
 	medicineRepo := repository.NewMedicineRepository(db)
+	reviewRepo := repository.NewReviewRepository(db)
+	cartRepo := repository.NewCartRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	categoryService := services.NewCategoryService(categoryRepo)
 	subCategoryService := services.NewSubCategoryService(subCategoryRepo, categoryRepo)
 	medicineService := services.NewMedicineService(medicineRepo, categoryRepo, subCategoryRepo)
+	reviewService := services.NewReviewService(reviewRepo, medicineRepo)
+	cartService := services.NewCartService(cartRepo, userRepo, medicineRepo)
+	userService := services.NewUserService(userRepo)
 
 	router := gin.Default()
 
 	limiter := middlewares.NewRateLimiter(config.RateLimitRPS, config.RateLimitBurst)
 	router.Use(limiter.RateLimitMiddleware())
 
-	transport.RegisterRoutes(router, categoryService, subCategoryService, medicineService)
+	transport.RegisterRoutes(router, categoryService, subCategoryService, medicineService, cartService, userService, reviewService)
 
 	if err := router.Run(); err != nil {
 		log.Fatalf("не удалось запустить HTTP-сервер: %v", err)
