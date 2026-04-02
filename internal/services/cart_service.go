@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"pharmacy/internal/models"
 	"pharmacy/internal/repository"
 
@@ -75,6 +76,8 @@ func (s *cartService) DeleteItem(userID, itemID uint) error {
 
 	}
 
+	fmt.Println("вот инфа:", cart.CartItems)
+
 	var lineTotal int
 	var hasItemID bool
 	for _, v := range cart.CartItems {
@@ -84,6 +87,9 @@ func (s *cartService) DeleteItem(userID, itemID uint) error {
 			break
 		}
 	}
+
+	
+
 	if !hasItemID {
 		return errors.New("ItemId not Found")
 	}
