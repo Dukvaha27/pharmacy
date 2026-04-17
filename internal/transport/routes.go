@@ -14,13 +14,19 @@ func RegisterRoutes(
 	cartService services.CartService,
 	userService services.UserService,
 	reviewService services.ReviewService,
+	orderService *services.OrderService,
+	paymentService *services.PaymentService,
+	promocodeService *services.PromocodeService,
 ) {
 	categoryHandler := NewCategoryHandler(categoryService)
 	subCategoryHandler := NewSubCategoryHandler(subCategoryService)
 	medicineHandler := NewMedicineHandler(medicineService)
-	userHandler := NewUserHandler(userService)
+	userHandler := NewUserHandler(userService, orderService)
 	cartHandler := NewCartHandler(cartService)
 	reviewHandler := NewReviewHandler(reviewService)
+	orderHandler := NewOrderHandler(orderService)
+	paymentHandler := NewPaymentHandler(paymentService, orderService)
+	promocodeHandler := NewPromocodeHandler(promocodeService)
 
 	categoryHandler.RegisterRoutes(router)
 	subCategoryHandler.RegisterRoutes(router)
@@ -28,4 +34,7 @@ func RegisterRoutes(
 	cartHandler.RegisterRoutes(router)
 	reviewHandler.RegisterRoutes(router)
 	userHandler.RegisterRoutes(router)
+	orderHandler.RegisterRoutes(router)
+	paymentHandler.RegisterRoutes(router)
+	promocodeHandler.RegisterRoutes(router)
 }

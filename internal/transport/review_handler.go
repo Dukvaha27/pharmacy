@@ -13,113 +13,103 @@ type ReviewHandler struct {
 	service services.ReviewService
 }
 
-func NewReviewHandler(reviewService services.ReviewService) ReviewHandler {
-	return ReviewHandler{service: reviewService}
+func NewReviewHandler(service services.ReviewService) ReviewHandler {
+	return ReviewHandler{
+		service: service,
+	}
 }
-
-// GET /medicines/:id/reviews — список отзывов к лекарству.
-// POST /medicines/:id/reviews — добавить отзыв.
-// PATCH /reviews/:id — частично изменить отзыв (например, текст или оценку).
-// DELETE /reviews/:id — удалить отзыв.
 
 func (h *ReviewHandler) RegisterRoutes(r *gin.Engine) {
-	medicinesByIDReview := r.Group("/medicines/:id/review")
+	reviews := r.Group("/reviews")
 	{
-		medicinesByIDReview.GET("", h.GetAll)
-		medicinesByIDReview.POST("", h.Create)
+		reviews.PATCH("/:id", h.Update)
+		reviews.DELETE("/:id", h.Delete)
 	}
-	reviewsByID := r.Group("/reviews/:id")
+
+	medicines := r.Group("/medicines")
 	{
-		reviewsByID.PATCH("", h.Update)
-		reviewsByID.DELETE("", h.Delete)
+		medicines.GET("/:id/reviews", h.GetAll)
+		medicines.POST("/:id/reviews", h.Create)
 	}
 }
 
-func (h *ReviewHandler) GetAll(c *gin.Context) {
-	medicineID, err := strconv.Atoi(c.Param("id"))
+func (h *ReviewHandler) GetAll(ctx *gin.Context) {
+	medicineID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Medicine ID is not a number",
-			"details": err.Error(),
-		})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "medicine id is not a number"})
 		return
 	}
-	reviews, err := h.service.GetAll(uint64(medicineID))
+
+	reviews, err := h.service.GetAll(medicineID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Ошибка при получении данных",
-			"details": err.Error(),
-		})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, reviews)
+
+	ctx.JSON(http.StatusOK, reviews)
 }
 
-func (h *ReviewHandler) Create(c *gin.Context) {
+func (h *ReviewHandler) Create(ctx *gin.Context) {
+	medicineID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "medicine id is not a number"})
+		return
+	}
+
 	var req models.ReviewCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Неправильно переданы данные",
-			"details": err.Error(),
-		})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	req.MedicineID = uint(medicineID)
 
 	if err := h.service.Create(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Ошибка при создании данных",
-			"details": err.Error(),
-		})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, "Review created")
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"message": "review created",
+	})
 }
 
-func (h *ReviewHandler) Update(c *gin.Context) {
+func (h *ReviewHandler) Update(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "review id is not a number"})
+		return
+	}
+
 	var req models.ReviewUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Неправильно переданы данные",
-			"details": err.Error(),
-		})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	reviewID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Review ID is not a number",
-			"details": err.Error(),
-		})
+	if err := h.service.Update(id, req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.service.Update(uint64(reviewID), req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Ошибка при обновлении данных",
-			"details": err.Error(),
-		})
-		return
-	}
-	c.JSON(http.StatusOK, "Review updated")
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "review updated",
+	})
 }
 
-func (h *ReviewHandler) Delete(c *gin.Context) {
-	reviewID, err := strconv.Atoi(c.Param("id"))
+func (h *ReviewHandler) Delete(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Review ID is not a number",
-			"details": err.Error(),
-		})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "review id is not a number"})
 		return
 	}
 
-	if err := h.service.Delete(uint64(reviewID)); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Ошибка удаления отзыва",
-			"details": err.Error(),
-		})
+	if err := h.service.Delete(id); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, "Review deleted")
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "review deleted",
+	})
 }

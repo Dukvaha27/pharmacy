@@ -19,33 +19,38 @@ func NewSubCategoryHandler(subCategoryService services.SubCategoryService) SubCa
 }
 
 func (h *SubCategoryHandler) RegisterRoutes(r *gin.Engine) {
-	subCategories := r.Group("/subCategories")
+	categories := r.Group("/categories")
 	{
-		subCategories.GET("", h.GetAllSubCategories)
-		subCategories.GET("/with-parents/:id", h.GetCategoryWithSubCategories)
-		subCategories.GET("/by-parentId/:categoryId", h.GetSubCategoriesByCategory)
-		subCategories.POST("", h.CreateSubCategory)
-		subCategories.GET("/:id", h.GetSubCategory)
-		subCategories.PATCH("/:id", h.UpdateSubCategory)
-		subCategories.DELETE("/:id", h.DeleteSubCategory)
+		categories.GET("/:id/subcategories", h.GetSubCategoriesByCategory)
+		categories.POST("/:id/subcategories", h.CreateSubCategoryInCategory)
+	}
+
+	subcategories := r.Group("/subcategories")
+	{
+		subcategories.GET("", h.GetAllSubCategories)
+		subcategories.GET("/:id", h.GetSubCategory)
+		subcategories.PATCH("/:id", h.UpdateSubCategory)
+		subcategories.DELETE("/:id", h.DeleteSubCategory)
 	}
 }
 
-func (h *SubCategoryHandler) CreateSubCategory(c *gin.Context) {
-	var req struct {
-		CategoryID uint   `json:"category_id" binding:"required,min=1"`
-		Name       string `json:"name" binding:"required,min=1,max=255"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "invalid request",
-			"details": err.Error(),
-		})
+func (h *SubCategoryHandler) CreateSubCategoryInCategory(c *gin.Context) {
+	categoryID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || categoryID < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
 		return
 	}
 
-	subCategory, err := h.services.Create(req.CategoryID, req.Name)
+	var req struct {
+		Name string `json:"name" binding:"required,min=1,max=255"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	subCategory, err := h.services.Create(uint(categoryID), req.Name)
 	if err != nil {
 		status := http.StatusBadRequest
 		if err.Error() == "category not found" {
@@ -57,22 +62,13 @@ func (h *SubCategoryHandler) CreateSubCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "subcategory created successfully",
-		"data":    subCategory,
-	})
+	c.JSON(http.StatusCreated, subCategory)
 }
 
 func (h *SubCategoryHandler) GetSubCategory(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
-
-	if err != nil {
+	if err != nil || id < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subcategory id"})
-		return
-	}
-
-	if id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subCategory id"})
 		return
 	}
 
@@ -86,7 +82,7 @@ func (h *SubCategoryHandler) GetSubCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": subCategory})
+	c.JSON(http.StatusOK, subCategory)
 }
 
 func (h *SubCategoryHandler) GetAllSubCategories(c *gin.Context) {
@@ -96,20 +92,12 @@ func (h *SubCategoryHandler) GetAllSubCategories(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data":  subCategories,
-		"count": len(subCategories),
-	})
+	c.JSON(http.StatusOK, subCategories)
 }
 
 func (h *SubCategoryHandler) GetSubCategoriesByCategory(c *gin.Context) {
-	categoryID, err := strconv.Atoi(c.Param("categoryId"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
-		return
-	}
-
-	if categoryID < 1 {
+	categoryID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || categoryID < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
 		return
 	}
@@ -124,10 +112,7 @@ func (h *SubCategoryHandler) GetSubCategoriesByCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data":  subCategories,
-		"count": len(subCategories),
-	})
+	c.JSON(http.StatusOK, subCategories)
 }
 
 func (h *SubCategoryHandler) UpdateSubCategory(c *gin.Context) {
@@ -142,10 +127,7 @@ func (h *SubCategoryHandler) UpdateSubCategory(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "invalid request",
-			"details": err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
@@ -161,21 +143,13 @@ func (h *SubCategoryHandler) UpdateSubCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "subcategory updated successfully",
-		"data":    subCategory,
-	})
+	c.JSON(http.StatusOK, subCategory)
 }
 
 func (h *SubCategoryHandler) DeleteSubCategory(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+	if err != nil || id < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subcategory id"})
-		return
-	}
-
-	if id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subCategory id"})
 		return
 	}
 
@@ -188,36 +162,5 @@ func (h *SubCategoryHandler) DeleteSubCategory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "subcategory deleted successfully",
-	})
-}
-
-func (h *SubCategoryHandler) GetCategoryWithSubCategories(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category id"})
-		return
-	}
-
-	if id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid subCategory id"})
-		return
-	}
-
-	category, subCategories, err := h.services.GetCategoryWithSubCategories(uint(id))
-	if err != nil {
-		status := http.StatusNotFound
-		if err.Error() == "invalid category id" {
-			status = http.StatusBadRequest
-		}
-		c.JSON(status, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"category":      category,
-		"subcategories": subCategories,
-		"count":         len(subCategories),
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "subcategory deleted successfully"})
 }
