@@ -13,7 +13,7 @@ type User struct {
 type UserCreateRequest struct {
 	FullName       string `json:"full_name" binding:"required"`
 	Email          string `json:"email" binding:"required,email"`
-	Phone          string `json:"phone" binding:"required,len=11"`
+	Phone          string `json:"phone" binding:"required"`
 	DefaultAddress string `json:"default_address" binding:"omitempty,min=5"`
 }
 

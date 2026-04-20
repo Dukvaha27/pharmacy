@@ -176,7 +176,28 @@ func (r *medicineRepository) Exists(id uint) (bool, error) {
 }
 
 func (r *medicineRepository) UpdateAvgRating(id uint) error {
-	// Здесь будет логика подсчета среднего рейтинга из таблицы reviews
-	// Пока заглушка, позже реализуем
+	var avgRating float64
+
+	err := r.db.
+		Model(&models.Review{}).
+		Where("medicine_id = ?", id).
+		Select("COALESCE(AVG(rating), 0)").
+		Scan(&avgRating).Error
+	if err != nil {
+		return err
+	}
+
+	result := r.db.
+		Model(&models.Medicine{}).
+		Where("id = ?", id).
+		Update("avg_rating", avgRating)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
 	return nil
 }
